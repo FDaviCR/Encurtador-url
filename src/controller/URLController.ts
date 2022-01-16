@@ -1,31 +1,31 @@
-import { Request, Response } from 'express';
-import shortId from 'shortid';
-import { config } from '../config/Constants';
-import { URLModel } from 'database/model/URL';
+import { Request, Response } from 'express'
+import shortId from 'shortid'
+import { config } from '../config/Constants'
+import { URLModel } from '../database/model/URL'
 
-export class URLController{
-    public async shorten(req: Request, res: Response): Promise<void>{
-        const { originURL } = req.body;
-        const url = await URLModel.findOne({ originURL });
-        if(url){
-            res.json(url);
-            return
-        }
-        const hash = shortId.generate();
-        const shortURL = `${config.API_URL}/${hash}`;
-        const newUrl = await URLModel.create({ hash, shortURL, originURL});
-        res.json(newUrl);
-    }
+export class URLController {
+	public async shorten(req: Request, response: Response): Promise<void> {
+		const { originURL } = req.body
+		const url = await URLModel.findOne({ originURL })
+		if (url) {
+			response.json(url)
+			return
+		}
+		const hash = shortId.generate()
+		const shortURL = `${config.API_URL}/${hash}`
+		const newURL = await URLModel.create({ hash, shortURL, originURL })
+		response.json(newURL)
+	}
 
-    public async redirect(req: Request, res: Response): Promise<void> {
-        const { hash } = req.params;
+	public async redirect(req: Request, response: Response): Promise<void> {
+		const { hash } = req.params
+		const url = await URLModel.findOne({ hash })
 
-        const url = {
-            originURL: 'https://cloud.mongodb.com/v2/5eb383604ebef07241292aae#clusters',
-            hash: 'lNpW4MPGD', 
-            shortURL: 'http://localhost:5000/lNpW4MPGD',
-        }
+		if (url) {
+			response.redirect(url.originURL)
+			return
+		}
 
-        res.redirect(url.originURL);
-    }
+		response.status(400).json({ error: 'URL not found' })
+	}
 }
